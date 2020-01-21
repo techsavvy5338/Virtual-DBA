@@ -1,0 +1,20 @@
+  <cfcomponent name="SiteAssets" output="no">
+<!--- ********** SiteAssets *************** --->
+<!--- Use this component to load assets into the DEPTemplate that are specific to your application. --->
+
+
+  
+  <cffunction name="loadSiteAssets" output="false">
+
+    <cfsavecontent variable="links">
+<!--- Add links your site specific files within the cfoutput tags below. ---> 
+    <cfoutput>
+<!-- *********** Site Specific CSS and JS *********** -->    
+      <link rel='stylesheet' href='assets/CSS/site.css'>
+      <!--<script src="assets/MoDView.js"></script>-->
+    </cfoutput>
+
+    </cfsavecontent>
+    <cfreturn links>
+  </cffunction>
+</cfcomponent>

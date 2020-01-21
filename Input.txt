@@ -1,0 +1,41 @@
+<!---this page is where users input their code and hit execute to move on to the sqlresults page--->
+
+<cfscript>
+title = ": SQL Input";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">
+		
+
+<!---javascript to grab hold of the value written inside of the textarea--->
+<script language="JavaScript">
+function showInput() {
+document.getElementById('display').innerHTML =
+document.getElementById("user_input").value;}
+</script>
+
+<!---checks if OracleServer has been selected and if not gives the dev server as the default value--->
+<cfparam name="session.OracleServer" default="prod">
+<cfif IsDefined("form.OracleServer")>
+	<cfset session.OracleServer = #form.OracleServer#/>
+</cfif>
+
+<cfoutput>
+	Currently on the #UCase(session.OracleServer)# server. Go to the <a href="Settings.cfm">Settings</a> tab to switch servers.
+</cfoutput>
+
+<cfset FullPath = getCurrentTemplatePath()>
+<cfset session.CurrentPath = replace(FullPath, "Input.cfm","")>
+
+<h1><b>Place SQL Here...</b></h1>
+
+<!---textarea--->
+<cfform method="post" action="SQLResults.cfm"  class="col-md-7">
+<textarea name ="message" rows="25" cols="120" id="user_input"></textarea>
+<button type="submit" class="btn btn-primary btn-lg">Execute</button>
+</cfform>
+
+					
+</div> 
+</cf_DEPTemplate>

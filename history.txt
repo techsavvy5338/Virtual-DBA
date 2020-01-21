@@ -1,0 +1,64 @@
+<!---this page is just for viewing all the queries that have been committed. it also has a hidden table only visible if you are an admin.--->
+
+<cfscript>
+title = ": History";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No" useCF_Scripts="true">
+<div id="content" role="document" class="col-xs-12">
+
+
+<!---parameter so you can use the search bar--->
+<cfparam default="" name="form.Search_Text"> 
+
+<!---conditional statement that checks if the search bar is empty and if so shows the full history_grid--->
+ <cfif form.Search_Text eq ''>
+<cfquery name="search_query" datasource="sqlprocessing">
+	select t.*, t.rowid, dbms_lob.substr( t.Query_Text, 1000, 1) As Truncated_Query_Text
+	from history t
+	order by Query_Date desc
+</cfquery>
+
+<!---if you enter a full or partial (e/a) number username and press search it will only show those results--->
+<cfelse>
+<cfquery name="search_query" datasource="sqlprocessing">
+	select t.*, t.rowid, dbms_lob.substr( t.Query_Text, 1000, 1) As Truncated_Query_Text
+	from history t
+	where Query_Username like '%#form.Search_Text#%'
+	order by Query_Date desc
+</cfquery>	
+</cfif>
+
+<!---the search bar--->
+	    		<p><cfform  method="post" action="history.cfm"  id="searchform"> 
+	      		<cfinput  type="text" name="Search_Text"> 
+	      		<cfinput  type="submit" name="submit" value="Search"> 
+	    		</cfform></p>
+	    		
+<!---the history_grid--->
+				<cfform method="post">
+				<cfgrid name="history_grid" query="search_query" gridlines="true" sort="true" height="400" selectmode="row" format="html">
+				<cfgridcolumn name="History_Key" header="ID" width="50">
+				<cfgridcolumn name="Query_Date" header="Date" type="string_noCase" width="150">
+				<cfgridcolumn name="Query_Username" header="Username" width="100">
+				<cfgridcolumn name="Server" header="Server" width="100">
+				<cfgridcolumn name="Truncated_Query_Text" header="Truncated Query Text" width="400">
+				<cfgridcolumn name="Truncated_Query_Results" header="Truncated Query Results" href="HistoryConnect.cfm" hrefkey="History_Key" target="_blank" width="250">
+				</cfgrid>
+				</cfform>
+				
+<!---if you are an admin you can view a second history table with all results commit & rollback--->				
+<cfquery name="userlist" datasource="sqlprocessing">
+select *
+from admin
+</cfquery>
+<cfset adminlist="#valuelist(userlist.users)#">
+<cfif listfindnocase(adminlist,user.getusername()) GT 0>
+  <cfform method="post" action="ViewFullHistory.cfm">
+    <button type="submit" class="btn btn-primary btn-lg">View Full History Table Commits & Rollbacks</button>
+  </cfform>
+</cfif>
+
+
+</div> 
+</cf_DEPTemplate>

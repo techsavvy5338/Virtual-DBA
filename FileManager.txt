@@ -1,0 +1,46 @@
+<cfcomponent output="no"> 
+
+<!--- Allow Cross Origin Resource Sharing --->
+<cfheader name="Access-Control-Allow-Origin" value="*">
+<cfheader name="Access-Control-Expose-Headers" value="content-type">
+<cfheader name="Access-Control-Allow-Methods" value="GET, POST, PUT">
+
+
+
+<!---Checks that the download, preview and thumbnail directories have been set up and sets them up if it finds that they are not--->
+<cffunction name="setupDirectories" access="remote" returntype="string" returnformat="JSON" output="false" >
+<cfset directoriesSet=false>
+<cfif directoryexists(application.workDir)>
+<cfset workSet=true>
+<cfset directoriesSet=true>
+<cfelse>
+<cfset directoriesSet=false>
+<cfdirectory directory="#application.workDir#" action="create" >
+</cfif>
+<cfreturn variables.directoriesSet>
+</cffunction>
+
+
+<!---Given a directory name and a superdirectory with in which to create the directory, it creates a directory of that name--->
+<cffunction name="createDirectory" access="remote" returntype="string" returnformat="JSON" output="false" >
+<cfargument name="directoryName" required=true >
+<cfargument name="parentDir" >
+<cfset directoryCreated="Not Created">
+<cfset newDir = "">
+<cfset path=application.workDir>
+<cfif isDefined("arguments.parentDir")>
+<cfset path = path & "\" & parentDir>
+</cfif>
+<cfif directoryexists(path)>
+<cfset newDir=path & "\" & directoryName>
+<cfif !directoryexists(newDir)>
+<cfdirectory directory="#newDir#" action="create">
+<cfset directoryCreated="Created">
+<cfelse>
+<cfset directoryCreated="Existed">
+</cfif>
+</cfif>
+<cfreturn newDir>
+</cffunction>
+
+</cfcomponent>

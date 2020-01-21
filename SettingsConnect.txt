@@ -1,0 +1,83 @@
+<!---this page is all background and just checks to see if you are an admin and if not you can not make keyword changes and if you are 
+and admin they you can add/delete keywords.--->
+
+<cfscript>
+title = ": Conditional";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">
+
+
+<!---query to call on the admin table--->
+<cfquery name="userlist" datasource="sqlprocessing">
+select *
+from admin
+</cfquery>
+
+<!---calling on the security.cfc object page --->
+<cfset qadmin= new security()>
+
+<!---big conditional statement that checks both the keywords and admin users to see if the have access--->
+<cfset userfound = "#qadmin.admin_checker()#">
+<cfif userfound>
+	
+<!---conditional statement that allows user to delete(D), insert(I), and update(U) the Keywords grid from settings.cfm--->
+<cfif isdefined("form.keywordgrid.rowstatus.action")>
+<cfloop index="counter" from = "1" to = #arraylen(form.keywordgrid.rowstatus.action)#>
+<cfoutput> row updated #form.keywordgrid.rowstatus.action[counter]#</cfoutput>
+<cfif form.keywordgrid.rowstatus.action[counter] is "D">
+<cfquery name="deletekeyword" datasource="sqlprocessing">
+delete from KeywordsList
+where keywords='#form.keywordgrid.original.keywords[counter]#'
+or keywords is null
+</cfquery>
+<cfelseif form.keywordgrid.rowstatus.action[counter] is "I">
+<cfquery name="insertkeyword" datasource="sqlprocessing">
+insert into keywordslist (keywords)
+values ('#form.keywordgrid.keywords[counter]#')
+</cfquery>
+<cfelseif form.keywordgrid.rowstatus.action[counter] IS "U">
+
+<cfquery name="updatekeyword" datasource="sqlprocessing">
+update keywordslist
+set 
+keywords='#form.keywordgrid.keywords[counter]#'
+where keywords='#form.keywordgrid.original.keywords[counter]#'
+</cfquery>
+</cfif>
+</cfloop>
+</cfif>
+
+<!---conditional statement that allows user to delete(D), insert(I), and update(U) the Admin grid from settings.cfm--->
+<cfif isdefined("form.admingrid.rowstatus.action")>
+<cfloop index="counterr" from = "1" to = #arraylen(form.admingrid.rowstatus.action)#>
+<cfoutput> row updated #form.admingrid.rowstatus.action[counterr]#</cfoutput>
+<cfif form.admingrid.rowstatus.action[counterr] is "D">
+<cfquery name="deleteuser" datasource="sqlprocessing">
+delete from admin
+where users='#form.admingrid.original.users[counterr]#'
+or users is null
+</cfquery>
+<cfelseif form.admingrid.rowstatus.action[counterr] is "I">
+<cfquery name="insertuser" datasource="sqlprocessing" >
+insert into admin (users)
+values ('#form.admingrid.users[counterr]#')
+</cfquery>
+<cfelseif form.admingrid.rowstatus.action[counterr] IS "U">
+
+<cfquery name="updateuser" datasource="sqlprocessing">
+update admin
+set 
+users='#form.admingrid.users[counterr]#'
+where users='#form.admingrid.original.users[counterr]#'
+</cfquery>
+</cfif>
+</cfloop>
+</cfif>
+<cfelse> <h2>User not allowed to make changes to Keywords or Users. Contact DBA if necessary</h2>
+</cfif>
+
+
+</div>  
+</cf_DEPTemplate>

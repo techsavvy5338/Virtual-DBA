@@ -1,0 +1,19 @@
+<!---this page is accessible after sqlresults if a user hits rollback. the code is automatically rolled back but the user does not 
+know that and this will visually show them it is rolled back as well as sets the session variable message back to a default blank--->
+
+<cfscript>
+title = ": Page 3";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">
+
+
+<!---sets message equal to blank to reset the value--->
+<cfset session.message = "">
+
+<p> Rollback Complete</p>
+
+
+</div>  
+</cf_DEPTemplate>

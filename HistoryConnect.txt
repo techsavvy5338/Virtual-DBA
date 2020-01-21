@@ -1,0 +1,31 @@
+<!---this page is only for viewing and is accessible once a user double clicks on the results in the history grid--->
+
+<cfscript>
+title = ": New Window";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">
+
+
+<!---query that turns the Query_Results into a url to open a new tab to view expanded results--->
+<cfquery name="truncated_results" datasource="sqlprocessing">
+select Query_Text, Server, Truncated_Query_Results
+from history
+where History_Key = '#url.cfgridkey#'
+</cfquery>
+
+<!---writes results from above query to HistoryView.htm and then reads it on to the page--->
+<cffile action="write" file="#session.user.workDir#\HistoryView.htm" output="#truncated_results.Truncated_Query_Results#">
+<cffile action="read" file="#session.user.workDir#\HistoryView.htm" variable="History_View">
+
+<!---pulls the code you are executing along with what sql+ dumps out--->
+<cfoutput><p> <h4>#truncated_results.Query_Text#</h4> </p></cfoutput>
+<cfoutput><p> <h4>#truncated_results.Server# server</h4> </p></cfoutput>
+
+<!---displays the truncated results--->
+<cfoutput><iframe class="col-xs-12" frameBorder="0" src="work/#session.user.getusername()#/HistoryView.htm"></iframe></cfoutput>
+
+
+</div>  
+</cf_DEPTemplate>

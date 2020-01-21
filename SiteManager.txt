@@ -1,0 +1,173 @@
+// Site manager contains methods through which you can add your own 
+// components and variables at the start of the application, the session
+// or the request. Items are added after the application.cfc adds its components
+// and variables.
+component accessors=true output=false {
+
+  variables.version="0.20";
+  variables.facing="Int";
+// Used for the Application Name on the server and  for the PDU ID function to create unique ID's. (see uf1.cfc) ****/
+  variables.IDBaseCode = "SPS";
+// default title for pages.
+  variables.DefaultTitle="SQL Proc Site";
+  variables.AppName="SQL Proc Site";
+  variables.sessionManagement="Yes";
+
+// Authentication and Authorization
+
+// Use AuthType = "none" for no login
+// Use AuthType = "dbLogin" for ERIS login
+// Use AuthType = "adLogin" for Active Directory login
+
+  variables.AuthType = "adLogin";
+
+// Whether or not you site will use jQuery and/or angular
+  variables.useJquery = true;
+  variables.useAngular = false;
+  variables.useCF_Scripts = false;
+  
+// If AuthOffices is an empty array, any DEP user can
+// access the application. Otherwise only the users
+// that are from on of the offices in the list. 
+// Currently (3/17/2016) there is no implemetation for
+// AuthOffices because we cannot connect users to offices.
+  
+  variables.AuthOffices = [];
+
+// Authenticate using Active Directory groups.
+// Not yet implemented.
+ 
+  variables.AuthGroups=[];
+
+// Obviously you want to use the DB info for your project.
+
+  variables.dbSchema = "SQLPROCESSING";
+  variables.dbUser = "SQLPROCESSING";
+  variables.dbPassword = "SomePassword!";
+  variables.SelectDSN="SQLPROCESSING";
+  variables.UpdateDSN="SQLPROCESSING";
+
+// Environment dependent variables
+// For variables that will change depending on the application environment.
+
+// A shorter session timeout to be used on DEV.
+  variables.devSessionTimeout=CreateTimeSpan(0, 0, 10, 0);
+// A shorter session timeout to be used on TEST.
+  variables.testSessionTimeout=CreateTimeSpan(0, 0, 20, 0);
+  variables.prodSessionTimeout=CreateTimeSpan(0, 1, 0, 0);
+  variables.devFileURL = "https://wwwdev.dep.wv.gov/fileserv/MOD/";
+  variables.testFileURL = "https://wwwtest.dep.wv.gov/fileserv/MOD/";
+  variables.prodFileURL = "https://www.dep.wv.gov/fileserv/MOD/";
+
+// Other variables as needed.
+// Useful for redirects within the application. You will want to change these to point to wherever
+// your app is located.
+
+  variables.ServerPath = replace(getCurrentTemplatePath(), "SiteManager.cfc", "");
+  variables.AppRoot = "apps";
+  variables.AppDir = "SQLPROC3";
+
+  public function loadSiteSettings(appThis){
+    appThis.name = variables.IDBaseCode & "_" & variables.facing & "_" & variables.version;
+    appThis.sessionManagement=variables.sessionManagement;
+    application.sessionManagement=variables.sessionManagement;
+    application.sessionTimeout=CreateTimeSpan(0, 1, 0, 0);
+  }
+
+// Sets the default values of application variables.
+// This function is called at the end of onApplicationStart in the application.cfc just after the 
+// variables and components set up by the BasicCFSite.
+ 
+  public function setApplicationDefaults(){
+    application.AppName=variables.AppName;
+    application.FullName= variables.AppName & " " & variables.facing & " " & variables.version;
+    application.sessionManagement=variables.sessionManagement;
+    application.DefaultTitle=variables.defaultTitle;
+    application.useJquery = variables.useJquery;
+    application.useAngular = variables.useAngular;
+    application.useCF_Scripts = variables.useCF_Scripts;
+
+// Used for the PDU ID function to create unique ID's. (see uf1.cfc)
+    application.IDBaseCode = variables.IDBaseCode;
+    application.AuthType = variables.AuthType;
+    application.AuthOffices = variables.AuthOffices;
+    application.AuthGroups=variables.AuthGroups;
+
+// Database defaults
+    application.dbSchema = variables.dbSchema;
+    application.dbUser = variables.dbUser;
+    application.dbPassword = variables.dbPassword;
+    application.SelectDSN=variables.SelectDSN;
+    application.UpdateDSN=variables.UpdateDSN;
+
+// Environment dependent variables
+// For variables the will change depending on the application.environment.
+
+    switch(application.environment) {
+      case "dev":
+        application.BaseFileURL = variables.devFileURL;
+        application.SessionTimeout = variables.devSessionTimeout;
+        break;
+      case "test":
+        application.BaseFileURL = variables.testFileURL;
+        application.SessionTimeout = variables.testSessionTimeout;
+        break;
+      default: 
+        application.BaseFileURL = variables.prodFileURL;
+        application.SessionTimeout = variables.devSessionTimeout;
+    }
+// Useful for redirects within the application. You will want to change these to point to wherever
+// your app is located.
+    application.ServerPath = variables.ServerPath;
+    application.AppRoot = variables.AppRoot;
+    application.AppDir = variables.AppDir;
+    application.root = "/" & application.AppRoot & "/" & application.AppDir & "/";
+	application.workDir=application.ServerPath & "work";
+}
+
+// Instantiates the initial Coldfusion Components. For most components is good practice to load them to application  
+// variables then create a separate singleton function to use to get them on the various pages. This way
+// you only create them once on the Production server but on Development server where you are constantly
+// changing them you can provide a new instance on each request.  Depending on what you
+// are trying to do, it might make sense to provide them for each session instead.
+ 
+// This function is called at the end of onApplicationStart in the applicaiton.cfc just after the 
+// variables and components set up by the BasicCFSite and the Sitemanager.setApplicationDefaults is run.
+ 
+// Components which already exist by the time this is run:
+// scope.variablename - cfc file - description
+// application.udf - userDefinedFunctions.cfc - various useful functions not easily catagorized 
+// application.auth - authentication.cfc - authentication and authorization info
+// application.assets - assets.cfc - 
+ 
+  public function loadApplicationComponents(){
+  	application.FileMgr = new FileManager();
+  	application.FileMgr.setupDirectories(); 
+  }
+
+  public function setSessionDefaults(){
+    session.OracleServer = "prod";
+  }
+
+  public function loadSessionComponents(){
+  }
+
+  public function setRequestDefaults(){
+  }
+
+  public function loadRequestComponents(){
+    request.siteAssets = getSiteAssets();
+  }
+
+  public SiteAssets function getSiteAssets(){
+    if (application.environment == "prod"){
+        if (!IsDefined("application.siteAssets")) {
+          application.siteAssets = new SiteAssets();
+        }
+        return application.siteAssets;
+      }
+      else {
+        return new SiteAssets();
+      }
+  }
+}

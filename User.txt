@@ -1,0 +1,372 @@
+component persistent=false accessors=false{
+
+	
+this.accessors=true;
+	
+this.name="User";
+	
+this.output=false;
+
+	
+public void function init(){
+	  
+variables.LoggedIn = false;
+	  
+variables.newUser=true;
+
+	  
+variables.Username="";
+	  
+variables.NetwareID="";
+	  
+variables.EpicsID="";
+	  
+variables.Email="";
+	  
+variables.LastName="User";
+	  
+variables.FirstName="Unknown";
+	  
+variables.MiddleName="";
+	  
+variables.EmployeeType="UKN";
+	  
+variables.JobTitle="";
+	  
+variables.PrimaryOffice="";
+	 
+variables.OtherOffices="";
+	  
+variables.ADGroups="";
+	  
+variables.DEPGroups="";
+	  
+variables.Phone="";
+	  
+variables.MobilePhone="";
+	  
+variables.OfficeLocation="";
+	  
+variables.OfficeNum="";
+	  
+variables.DEPHireDate="";
+	  
+variables.Department="DEP"; 
+	}
+
+
+
+// Component property functions and alias's.
+	public boolean function isLoggedIn(){
+	  
+return variables.LoggedIn;
+	}
+
+	
+public void function setLoggedIn(boolean theBool){
+		
+variables.LoggedIn = theBool;
+	}
+
+	
+public boolean function isNew(){
+	  
+return variables.newUser;
+	}
+
+	
+public void function setNew(boolean theBool){
+		
+variables.newUser = theBool;
+	}
+
+	
+public boolean function getLoggedIn(){
+		
+return variables.LoggedIn;
+	}
+	
+	
+public void function setUserName(string theName){
+		
+variables.UserName = theName;
+	}
+
+	
+public string function getUserName(){
+		
+return variables.UserName;
+	}
+
+
+
+// Groupwiseid is an alias for the username.
+	
+public string function getGroupwiseID(){
+		
+return getUserName();
+	}
+  
+  
+public void function setNetwareID(string theID){
+    
+variables.NetwareID = theID;
+  }
+
+  
+public string function getNetwareID(){
+    
+return variables.NetwareID;
+  }
+
+  
+public void function setEpicsID(string theID){
+    
+variables.EpicsID = theID;
+  }
+
+  
+public string function getEpicsID(){
+    
+return variables.EpicsID;
+  }
+
+	
+public void function setLastName(string theName){
+		
+variables.LastName = theName;
+	}
+
+	
+public string function getLastName(){
+		
+return variables.LastName;
+	}
+
+	
+public void function setFirstName(string theName){
+		
+variables.FirstName = theName;
+	}
+
+	
+public string function getFirstName(){
+		
+return variables.FirstName;
+	}
+
+	
+public void function setMiddleName(string theName){
+		
+variables.MiddleName = theName;
+	}
+
+	
+public string function getMiddleName(){
+		
+return variables.MiddleName;
+	}
+
+	
+public void function setEmployeeType(string empType){
+		
+variables.EmployeeType = empType;
+	}
+
+	
+public string function getEmployeeType(){
+		
+return variables.EmployeeType;
+	}
+
+	
+public function setJobTitle(string title){
+		
+variables.JobTitle = title;
+	}
+
+	
+public string function getJobTitle(){
+		
+if (StructKeyExists(variables, "JobTitle")){
+		 	
+return variables.JobTitle;
+		}
+		
+return " ";
+	}
+	
+public void function setPrimaryOffice(string theOffice){
+    
+variables.PrimaryOffice = theOffice;
+  }
+
+  
+public string function getPrimaryOffice(){
+    
+return variables.PrimaryOffice;
+  }
+
+  
+public void function setOtherOffices(string theOffices){
+    
+variables.OtherOffices = theOffices;
+  }
+
+  
+public string function getOtherOffices(){
+    
+return variables.OtherOffices;
+  }
+
+  
+public void function setADGroups(string theGroups){
+    
+variables.ADGroups = theGroups;
+  }
+
+  
+public string function getADGroups(){
+    
+return variables.ADGroups;
+  }
+
+  
+public void function setDEPGroups(string theGroups){
+    
+variables.DEPGroups = theGroups;
+  }
+
+  
+public string function getDEPGroups(){
+    
+return variables.DEPGroups;
+  }
+
+	
+public void function setEmail(string emailAddr){
+		
+variables.Email = emailAddr;
+	}
+
+	
+public string function getEmail(){
+		
+theEmail = "";
+		
+if (structKeyExists(variables,"Email")){
+		  
+theEmail = variables.Email;
+		}
+		
+return theEmail;
+	}
+  
+	
+public function setPhone(string newPhone){
+		
+variables.Phone = newPhone;
+	}
+
+	
+public string function getPhone(){
+		
+if (StructKeyExists(variables, "Phone")){
+		 	
+return variables.Phone;
+		}
+		
+return " ";
+	}
+
+  
+public function setMobilePhone(string newMobile){
+    
+variables.MobilePhone = newMobile;
+  }
+
+  
+public string function getMobilePhone(){
+    
+if (StructKeyExists(variables, "MobilePhone")){
+      
+return variables.MobilePhone;
+    }
+    
+return " ";
+  }
+
+	
+public function setOfficeLocation(string loc){
+		
+variables.Location = loc;
+	}
+
+	
+public string function getOfficeLocation(){
+		
+if (StructKeyExists(variables, "Location")){
+		 	
+return variables.Location;
+		}
+		
+return " ";
+	}
+
+  
+public function setOfficeNum(string newOfficeNum){
+    
+variables.OfficeNum = newOfficeNum;
+  }
+
+  
+public string function getOfficeNum(){
+    
+if (StructKeyExists(variables, "OfficeNum")){
+      
+return variables.OfficeNum;
+    }
+    
+return " ";
+  }
+
+  public void function setStartDate(date newStartDate){
+    
+variables.StartDate = newStartDate;
+  }
+
+  
+public void function setDEPHireDate(date newDEPHireDate){
+    
+variables.DEPHireDate = newDEPHireDate;
+  }
+  
+public date function getDEPHireDate(){
+    
+if (isDefined("variables.DEPHireDate")){
+     
+return variables.DEPHireDate;
+    }
+    
+else {
+      
+return  CreateDate(1966, 05, 25);
+      }
+  }
+
+	
+public string function getFullName(){
+		
+fullName = getFirstName() & " " & getLastName();
+		
+titleCaseName = REReplace( fullName, "\b(\S)(\S*)\b" , "\u\1\L\2" , "all" );
+		
+return titleCaseName;
+	}
+
+  
+public string function getDepartment(){
+		
+return variables.Department;
+	}
+}

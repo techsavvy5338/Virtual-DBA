@@ -1,0 +1,145 @@
+
+component persistent=false accessors=false{
+  public user function loadUser(User theUser){
+    qLoad = new Query();
+    qLoad.setDataSource(application.SelectDSN);
+    qLoad.setUsername(application.dbUser);
+    qLoad.setPassword(application.dbPassword);
+    qLoad.addParam(name="username", value=theUsername, CFSQLTYPE="CF_SQL_VARCHAR");
+
+    qLoad.setSql("select * from AD_Users where USERNAME = :username");
+
+    results=qLoad.execute().getResult();
+
+    if (results.RecordCount > 0) {
+      theUser.setnewUser(false);
+
+      theUser.setEpicsID(results.EPICS_ID);
+      theUser.setNetwareID(results.NETWARE_ID);
+      theUser.setEmployeeType(results.EMPLOYEE_TYPE);
+      theUser.setJobTitle(results.JOB_TITLE);
+      theUser.setOffices(results.OFFICES);
+      theUser.setPhone(results.PHONE);
+      theUser.setMobilePhone(results.MOBILE_PHONE);
+      theUser.setLocation(results.LOCATION);
+      theUser.setOfficeNum(results.OFFICE_NUM);
+      theUser.setDEPHireDate(results.DEP_HIRE_DATE);
+    }
+    return theUser;
+  }
+
+  public any function getEmployeeData(User theUser){
+    foundUser = false;
+    qLoad = new Query();
+    qLoad.setDataSource(application.SelectDSN);
+    qLoad.setUsername(application.dbUser);
+    qLoad.setPassword(application.dbPassword);
+    qLoad.addParam(name="username", value=theUser,getUsername(), CFSQLTYPE="CF_SQL_VARCHAR");
+
+    qLoad.setSql("select * from jjnilles. where GROUPWISE_ID = :username");
+
+    results = qLoad.execute().getResult();
+
+    return results;
+  }
+  public user function saveUser(user){
+    if (user.isNew()){
+     savedUser = insertUser(user);
+    }
+    else{
+      savedUser = updateUser(user);
+    }
+    return savedUser;
+  }
+  public user function insertUser(theUser){
+
+    qUpdate = new Query();
+    qUpdate.setDataSource(application.UpdateDSN);
+    qUpdate.setUsername(application.dbUser);
+    qUpdate.setPassword(application.dbPassword);
+
+        qUpdate.addParam(name="username", value=theUser.getUsername(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="epics_id", value=theUser.getEpicsID(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="netware_id", value=theUser.getNetwareID(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="email", value=theUser.getEmail(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="last_name", value=theUser.getLastName(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="first_name", value=theUser.getFirstName(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="middle_name", value=theUser.getMiddleName(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="employee_type", value=theUser.getEmployeeType(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="job_title", value=theUser.getJobTitle(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="primary_office", value=theUser.getPrimaryOffice(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="other_offices", value=theUser.getOtherOffices(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="ad_groups", value=theUser.getADGroups(), CFSQLTYPE="CF_SQL_CLOB");
+        qUpdate.addParam(name="dep_groups", value=theUser.getDEPGroups(), CFSQLTYPE="CF_SQL_CLOB");
+        qUpdate.addParam(name="phone", value=theUser.getPhone(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="mobile_phone", value=theUser.getMobilePhone(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="office_location", value=theUser.getLocation(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="office_num", value=theUser.getOfficeNum(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="start_date", value=theUser.getStartDate(), CFSQLTYPE="CF_SQL_DATE");
+        qUpdate.addParam(name="end_date", value=theUser.getEndDate(), CFSQLTYPE="CF_SQL_DATE");
+        qUpdate.addParam(name="dep_hire_date", value=theUser.getDEPHireDate(), CFSQLTYPE="CF_SQL_DATE");
+        qUpdate.addParam(name="create_date", value=value=DateFormat(now(), "mm/dd/yyyy"), CFSQLTYPE="CF_SQL_DATE");
+        qUpdate.addParam(name="last_update_date", value=value=DateFormat(now(), "mm/dd/yyyy"), CFSQLTYPE="CF_SQL_DATE");
+        qUpdate.addParam(name="create_user_id", value= session.User.getUsername(), CFSQLTYPE="CF_SQL_VARCHAR");
+        qUpdate.addParam(name="last_update_user_id", value= session.User.getUsername(), CFSQLTYPE="CF_SQL_VARCHAR");
+
+    qUpdate.setSql("insert into AD_USERS
+           (  username,
+              epics_id,
+              netware_id,
+              email,
+              last_name,
+              first_name,
+              middle_name,
+              employee_type,
+              job_title,
+              primary_office,
+              other_offices,
+              ad_groups,
+              dep_groups,
+              phone,
+              mobile_phone,
+              office_location,
+              office_num,
+              start_date,
+              end_date,
+              dep_hire_date,
+              create_date,
+              last_update_date,
+              create_user_id,
+              last_update_user_id )
+           values
+           (  :username,
+              :epics_id,
+              :netware_id,
+              :email,
+              :last_name,
+              :first_name,
+              :middle_name,
+              :employee_type,
+              :job_title,
+              :primary_office,
+              :other_offices,
+              :ad_groups,
+              :dep_groups,
+              :phone,
+              :mobile_phone,
+              :office_location,
+              :office_num,
+              :start_date,
+              :end_date,
+              :dep_hire_date,
+              :create_date,
+              :last_update_date,
+              :create_user_id,
+              :last_update_user_id )" );
+
+    qUpdate.execute();
+
+    return theUser;
+  }
+  public user function updateUser(theUser){
+  }
+  public user function deleteUser(){
+  }
+}

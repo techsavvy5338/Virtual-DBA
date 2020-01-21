@@ -1,0 +1,91 @@
+<!---   Attributes 
+   You can turn them on or off at the application level by setting the variables in the site manager.
+   You can turn them on or off at the page level by setting the attributes in the cf_DEPTemplate at top of the page. 
+--->
+<cfparam name="attributes.useAngular" default=#application.useAngular#>
+<cfparam name="attributes.useJquery" default=#application.useJquery#>
+<cfparam name="attributes.Title" default=#application.DefaultTitle#>
+<cfparam name="attributes.AppName" default=#application.AppName#>
+<cfparam name="attributes.Debug" default=#application.Debug#>
+<cfparam name="attributes.useCF_Scripts" default="#application.useCF_Scripts#">
+<cfsetting showDebugOutput=#attributes.Debug#>
+
+
+<cfif thisTag.ExecutionMode is 'start'>
+
+<!DOCTYPE html>
+<html>
+	<head>
+		
+<!---FORCES BROWSER TO USE LATEST VERSION --->
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <cfsilent>
+    <cfset angularAssets = "" />
+    <cfset jQueryAssets = "" />
+  </cfsilent>
+  <!--- DEFAULT ASSETS --->
+  <cfif attributes.useCF_Scripts>
+    <cfajaximport scriptSrc="/apps/assets/cf_scripts"/>
+  </cfif>
+  <cfsilent>
+      <cfif attributes.useAngular>
+        <cfset angularAssets = request.defaultAssets.loadAngular() />
+      </cfif>
+		 <cfif attributes.useJquery>
+        <cfset jQueryAssets = request.defaultAssets.loadjQuery() />
+     </cfif>
+     <cfset bootStrapAssets = request.defaultAssets.loadBootStrap() />
+     <cfset depAssets = request.defaultAssets.loadDEPAssets() />
+  </cfsilent>
+	<cfoutput>#angularAssets#</cfoutput> 
+  <cfoutput>#jQueryAssets#</cfoutput>
+  <cfoutput>#bootStrapAssets#</cfoutput>
+  <cfoutput>#depAssets#</cfoutput>
+  <cfsilent>
+     <cfset siteAssets = request.SiteAssets.loadSiteAssets() />
+  </cfsilent>
+    <cfoutput>#siteAssets#</cfoutput>
+  <title><cfoutput>#attributes.Title#</cfoutput></title>
+	</head>
+	
+<!---HEADER INFORMATION --->
+	
+	<body role="application" aria-labelledby="SiteHeader">
+		<header id="SiteHeader" class="header" id="top" role="banner" class="container-fluid">
+			<div class="col-xs-3"><img src="assets/images/GreenLogoBugSM.png"  role="presentation"/></div>
+			<div class="col-xs-9"><h1 class="site-heading"><cfoutput>#attributes.AppName#</cfoutput></h1></div>
+			<div class="visible-md-block visible-lg-block col-md-9 col-md-offset-3"><h2 class="sub-heading">from the WV Department of Environmental Protection</h2></div>
+		</header>
+    <cf_SiteNav>
+		<main id="main" class="main container-fluid"> 
+<cfelse>
+
+<!---FOOTER INFORMATION --->
+
+    </main>
+    <cfscript>
+  			machineName = createObject("java", "java.net.InetAddress").localhost.getHostName();
+  			instanceName = createObject("java","jrunx.kernel.JRun").getServerName();
+        applicationName = application.FullName;
+		</cfscript>
+    <footer id="SiteFooter" role="contentinfo" class="container-fluid">
+      <div class="row">
+     	<nav id="FooterNav" role="navigation" class="col-xs-12">
+        <a href="http://www.wv.gov/policies/Pages/default.aspx" target="wvgov">Privacy, Security
+           and Accessibility</a> | 
+        <a href="http://www.dep.wv.gov" target="wvgov">WV DEP</a> |
+        <a href="http://www.wv.gov" target="wvgov">WV.gov</a> |
+        <a href="http://www.usa.gov" target="wvgov">USA.gov</a>
+                
+      </nav>
+      <div id="FooterInfo" class="col-xs-12">
+        <cfoutput>#applicationName#</cfoutput> |            	
+       	<cfoutput>#machineName# - #instanceName#</cfoutput> |
+       	<span>&copy;2017 State of West Virginia</span>
+      </div>
+      </div> 
+    </footer>
+
+	</body>
+</html>
+</cfif>

@@ -1,0 +1,21 @@
+<cfscript>
+		title = ": Logout";
+	request.loadPageLocalVars(variables);
+	session.user = new User();
+</cfscript>
+
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+  <cfoutput>
+  <div id="content" class="col-xs-12" >
+  	  <h2>Logged Out</h2>
+	  
+	  	<cfif (!ArrayIsEmpty(alerts))>
+	  	  <cfloop index="alert" array="#alerts#">	
+	    <div class="alert #alert.type#" role="alert">#alert.message#</div>
+	      </cfloop>
+		</cfif>
+		
+	  <p>Thank you for visiting.</p>
+  </div>
+  </cfoutput>
+</cf_DEPTemplate>

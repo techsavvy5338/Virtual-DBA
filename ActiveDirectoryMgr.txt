@@ -1,0 +1,58 @@
+component persistent=false accessors=false{
+  variables.adAuthStart="OU=DEP,OU=Executive,dc=executive,dc=stateofwv,dc=gov";
+// To test whether other valid but not DEP AD users can login uncomment the next line.
+// variables.adAuthStart="OU=Division of Rehabilitation Services,OU=Education and the Arts,OU=Executive,DC=executive,DC=stateofwv,DC=gov";
+
+  variables.adAuthServer="DEPRODC02.executive.stateofwv.gov";
+  variables.adAuthScope="oneLevel"; // "base", "oneLevel", and "subtree" are possible. 
+  variables.adAuthAttr="samaccountname,sn,givenname,cn,initials,l,department,displayName,mail,employeeID,telephoneNumber,manager,title,physicaldeliveryofficename,memberof";
+
+// Authenticate using Active Directory
+// This should limit the users to only users that appear in the
+// DEP organizational unit.
+
+  public boolean function adAuthenticate(string username, string password) {
+    authenticated = false;
+    adTest = new ldap();
+    adTest.setLdapAttributes(variables.adAuthAttr);
+    adTest.setScope(variables.adAuthScope);
+    adTest.setUsername("executive\#username#");
+    adTest.setPassword(password);
+    adTest.setMaxrows(1);
+    adTest.setFilter("(&(sAMAccountType=805306368)(sAMAccountName=#username#))");
+    adTest.setStart(variables.adAuthStart);
+    adTest.setServer(variables.adAuthServer);
+
+// writeDump(adTest);
+
+    results = adTest.query();
+
+    writeDump(results);
+
+      writeDump(results.recordCount);
+
+    if (results.recordCount >0) {
+      authenticated = true;
+      request.ldapInfo = results;
+    }
+    return authenticated;
+  }
+
+  public query function getFairmontUsers(){
+    adStartContainer="OU=DEP,OU=Executive,DC=executive,DC=stateofwv,DC=gov";
+    adQry = new ldap();
+    adQry.setAction="Query";
+    adQry.setName="results";
+    adQry.setLdapAttributes(variables.adAuthAttr);
+    adQry.setScope("subtree");
+    adQry.setUsername("executive\E037400");
+    adQry.setPassword("In4motion20");
+    adQry.setSort("displayName");
+    adQry.setFilter("(&(sAMAccountType=805306368)(!(cn=*Template*)))");
+    adQry.setStart(adStartContainer);
+    adQry.setServer(variables.adAuthServer);
+
+    results = adQry.query();
+    return results;
+  }
+}

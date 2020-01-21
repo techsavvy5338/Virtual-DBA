@@ -1,0 +1,84 @@
+<cfscript>
+	title = ": Login";
+	
+	request.loadPageLocalVars(variables);
+
+	if (application.AuthType == "dbLogin"){
+		ArrayAppend(alerts, {message = "Use your ERIS login information.",
+	             type =  "alert-info"});
+	}
+	else {
+		ArrayAppend(alerts, {message = "Use your Email/Computer Login information.",
+	             type =  "alert-info"});
+	}
+</cfscript>
+
+<cfif IsDefined("form.username")>
+  <cfscript>
+	try {
+	  session.user=new user();
+	  if (application.AuthType == "dbLogin"){
+	  	if (udf.dbAuthenticate(form.username,form.password))
+	  	{
+	  	   session.user = udf.loadUser(form.username, application.AuthType);
+	  	}
+	  }
+	  else{
+	  	if (udf.adAuthenticate(form.username,form.password)) {	  	
+	  	   session.user = udf.loadUser(form.username, application.AuthType);
+	  	   session.user.workDir = application.FileMgr.createDirectory(session.user.getusername());
+	  	}
+	  }
+	  if (!udf.validateOffice(session.user)) {
+	    msg = "Unknown user. Environment: #env#"; 
+      	if (env == "dev" or env == "test"){
+        	msg &= " Perhaps your user needs to be backported to #env#. - Login.cfm";
+      	}
+      	throw (message=msg, type="User Not Found.")
+      }
+	
+	  if (session.user.isLoggedIn()) {
+	  		if (isDefined("session.targetPage")){
+	     	 location(session.targetPage,"NO");
+	  		}
+	    	else{
+	      		location("index.cfm");
+	   		}  	
+	  }
+	}
+    catch ("User Not Found." excpt){
+	    ArrayAppend(alerts, {message = "#excpt.type#<br /> #excpt.message#",
+	             type =  "alert-danger"});
+
+	    ArrayAppend(alerts, {message = "User Offices: #session.user.getOffices()# Valid Offices: #application.AuthOffices[1]#" ,
+	             type =  "alert-warning"});
+    }
+
+	catch (any excpt) {
+	  ArrayAppend(alerts, {message = "Invalid username/password. AuthType=#application.AuthType# #excpt.Message# <br> #excpt.Detail#",
+	             type =  "alert-danger"});
+	}
+	  </cfscript>
+</cfif>
+
+<cf_DEPTemplate title=#pageTitle# Debug="No">
+  <cfoutput>
+  <div id="content" class="col-xs-12" >
+  <form method="post" role="form" action="#CGI.SCRIPT_NAME#">
+	  <h2>Please Login</h2>
+	  
+	  	<cfif (!ArrayIsEmpty(alerts))>
+	  	  <cfloop index="alert" array="#alerts#">	
+	    <div class="alert #alert.type#" role="alert">#alert.message#</div>
+	      </cfloop>
+		</cfif>
+	  <p>
+	  <input type="hidden" name="returnTo" value="returnAddress" />
+	  <label for="username">Username: </label> <input type="text" name="username" /><br />
+	  <label for="password">Password: </label> <input type="password" name="password" />
+	  <p><input type="submit" class="btn btn-lg btn-blue"/>
+	  </p>
+  </form>
+  </div>
+  </cfoutput>
+</cf_DEPTemplate>

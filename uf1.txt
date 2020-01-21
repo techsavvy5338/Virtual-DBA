@@ -1,0 +1,280 @@
+
+// A host of useful functions. They are loaded as an object into an application
+// variable in applicationOnStart in the Application.cfc.
+
+component accessors=true output=false {
+  property type="string"
+           name="ADQueryLvl"
+           default="test";
+
+  variables.adAuthStart="OU=DEP,OU=Executive,dc=executive,dc=stateofwv,dc=gov";
+  variables.adAuthServer="DEPRODC02.executive.stateofwv.gov";
+  variables.adAuthScope="subtree"; 
+  variables.adAuthAttr="samaccountname,sn,givenname,cn,initials,l,department,displayName,mail,employeeID,telephoneNumber,manager,title,physicaldeliveryofficename,memberof";
+
+  this.setADQueryLvl(variables.adAuthScope);
+
+  public string function myNewFunc(){
+    return "myNewFunc is funky!";
+  }
+
+  public string function getIDBase()
+  {
+  	if (!IsDefined("APPLICATION.IDBaseCode"))
+	{
+	   application.IDBaseCode = "UKN";
+	}
+	return application.IDBaseCode;
+  }
+
+// Returns an identifier based on the year, the day of the year, and the time of day,
+// that should be unique and not produced again for at least 100 years.
+// The format is:
+// (IDBase)(Tick)-(2 digit year)(day in year + 255 in hex)-(seconds in day + 4096 in hex)
+// The IDBase is 3 Alphanumeric characters - assigned by the application.
+// The Tick is the current value of the millisecond timer in hex
+// This is useful for apps where neither an incremental ID nor one of the long
+// ones provided by the DB will do.
+
+  public string function getPduID()
+  {
+
+  	rightNow = Now();
+    tick = Int((Right(GetTickCount(),3)/4.167)+16);
+
+// Sleep a bit to prevent assigning the same ID twice in a row.
+    sleep(20);
+
+// Generate part 1
+    thisDay = (DateFormat(rightNow,"Y")*1000) + DayOfYear(rightNow);
+	  dayInYear = DayOfYear(rightNow)+255;
+	  idPart1 =  DateFormat(rightNow,"Y") &  FormatBaseN(dayInYear, 16);
+
+// Generate part 2
+	  hourBase = Hour(rightNow) * 3600;
+  	minuteBase = Minute(rightNow) * 60;
+  	secs = hourBase + minuteBase + Second(rightNow) + 4096;
+	  idPart2 =  FormatBaseN(secs, 16);
+
+	return getIDBase() & FormatBaseN(tick,16) & "-" & idPart1 & "-" & idPart2;
+  }
+
+  public boolean function validPduID(string id)
+  {
+  	validateExpr = "^\w{2,5}[0-9,abcdef]{2}-[0-9,abcdef]{5}-[0-9,abcdef]{4}$";
+  	idValid = false;
+  	if (REFind(validateExpr,id) >= 1)
+  	{
+  	  isValid = true;
+  	}
+  	return isValid;
+  }
+
+
+// Authenticate via the ERIS login.
+
+  public boolean function dbAuthenticate(string username, string password) {
+  	authenticated = false;
+    qTest = new Query();
+  	qTest.setDataSource("erisnetselect");
+  	qTest.setUsername(username);
+  	qTest.setPassword(password);
+    qtest.addParam(name="username", value=username, CFSQLTYPE="CF_SQL_VARCHAR");
+  	qTest.setSql("select sysdate from dual");
+
+    results = qTest.execute().getResult();
+
+    if (results.recordCount >0) {
+      authenticated = true;
+
+    }
+    return authenticated;
+  }
+
+
+// Authenticate using Active Directory
+// This should limit the users to only users that appear in the
+// DEP organizational unit.
+
+  public boolean function adAuthenticate(string username, string password) {
+    authenticated = false;
+    adTest = new ldap();
+    adTest.setLdapAttributes(variables.adAuthAttr);
+    adTest.setScope(variables.adAuthScope);
+    adTest.setUsername("executive\#username#");
+    adTest.setPassword(password);
+    adTest.setMaxrows(1);
+    adTest.setFilter("(&(sAMAccountType=805306368)(sAMAccountName=#username#))");
+    adTest.setStart(variables.adAuthStart);
+    adTest.setServer(variables.adAuthServer);
+
+// writeDump(adTest);
+
+    results = adTest.query();
+
+    writeDump(results);
+
+
+    if (results.recordCount >0) {
+      authenticated = true;
+      request.ldapInfo = results;
+    }
+    return authenticated;
+  }
+
+
+// Loads the user information from the database.
+
+  public user function loadUser(username, loginType){
+    env = application.Environment;
+    user = new user();
+    qTest = new Query();
+    qTest.setDataSource("ERISNetSelect");
+    qTest.addParam(name="username", value=username, CFSQLTYPE="CF_SQL_VARCHAR");
+    if (loginType == "dbLogin") {
+          qTest.setSql("select trim(e.employee_last_name) last_name,
+                  trim(e.employee_middle_name) middle_name,
+                  trim(e.employee_first_name) first_name,
+                  trim(e.groupwise_id) groupwise_id, 
+                  trim(e.netware_user_id) netware_user_id,
+                  trim(e.employment_type_code) employment_type_code,
+                  trim(e.epics_id) epics_id,
+                  trim(t.dep_office_id) dep_office_id
+                  from dep_employee e
+                  right join S_LEGGE.DEP_EMPLOYEEXDEP_OFFICE t
+                  on e.employee_id = t.employee_id
+                  where upper(trim(netware_user_id)) = upper(trim(:username))
+                  and t.start_date < trunc(sysdate)
+                  and (t.end_date > trunc(sysdate) or t.end_date is null)
+                  and (e.left_agency_flag = 'N' or e.left_agency_flag is null)");
+      results = qTest.execute().getResult();
+    
+    if (results.recordCount >0) {
+      user.setLoggedIn(true);
+      user.setUsername(username);
+      user.setFirstName(results.first_name);
+      user.setLastName(results.last_name);
+      user.setGroupwiseID(results.groupwise_id);
+      user.setNetwareID(results.netware_user_id);
+      user.setEmail(results.groupwise_id & "@wv.gov");
+      user.setOffices(valueList(results.dep_office_id));
+      user.setEpicsID(results.epics_id);
+      user.setEmployeeType(results.employment_type_code);
+    }
+    }
+    
+    if (loginType == "adLogin") {
+      if (StructKeyExists(request, "ldapInfo")){
+        user.setLoggedIn(true);
+        user.setUsername(username);
+        user.setFirstName(request.ldapInfo.givenname);
+        user.setLastName(request.ldapInfo.sn);
+        user.setMiddleName(request.ldapInfo.initials);
+        user.setEmail(request.ldapInfo.mail);
+        user.setPhone(request.ldapInfo.telephoneNumber);
+
+        user.setJobTitle(request.ldapInfo.title);
+        user.setPrimaryOffice(request.ldapInfo.physicaldeliveryofficename);
+        user.setOfficeLocation(request.ldapInfo.l);
+
+        user.setADGroups(parseADGroups(request.ldapInfo.memberof));
+      }
+    }
+    
+      //writeDump(session.user);
+    else
+    {  
+      // Give more error info if on DEV or TEST.
+      msg = "Unknown user. Environment: #env#"; 
+      if (env == "dev" or env == "test"){
+        msg &= " Perhaps your user needs to be backported to #env#. - User.cfc";
+      }
+      throw (message=msg, type="User Not Found.");
+    }
+    return user;
+  }
+  public string function parseADGroups(string groupList){
+    grps=rEMatch("(?:CN=)[\w\d\s\-]+",groupList);
+    newGrps = ArrayToList(grps, ",");
+    newGrps = replace(newGrps,"CN=","","All");
+    return newGrps;
+  }
+  public boolean function validateOffice(user) {
+    valid = false;
+    validOffices = application.AuthOffices;
+    if (ArrayIsEmpty(validOffices)){
+      valid = true;
+    }
+    else {
+      userOffices = user.getOffices();
+      for (office in validOffices){
+        inOffice = ListFind(user.getOffices(), office);
+        writedump(inOffice);
+        if (inOffice > 0){
+          valid = true;
+        }
+      }
+    }
+    writedump(valid);
+    return valid;
+  }
+
+// This will take any query and turn it into an array suitable for passing to a page via JSON.
+// copied directly from: http://www.bennadel.com/blog/124-ask-ben-converting-a-query-to-an-array.htm
+
+  public array function QueryToArray(query Data){
+   var LOCAL = StructNew();
+// Get the column names as an array.
+	 LOCAL.Columns = ListToArray( ARGUMENTS.Data.ColumnList );
+// Create an array that will hold the query equivalent.
+	 LOCAL.QueryArray = ArrayNew( 1 );
+// Loop over the query.
+	 for (LOCAL.RowIndex = 1 ; LOCAL.RowIndex LTE ARGUMENTS.Data.RecordCount ; LOCAL.RowIndex = (LOCAL.RowIndex + 1)){
+// Create a row structure.
+		LOCAL.Row = StructNew();
+// Loop over the columns in this row.
+		for (LOCAL.ColumnIndex = 1 ; LOCAL.ColumnIndex LTE ArrayLen( LOCAL.Columns ) ; LOCAL.ColumnIndex = (LOCAL.ColumnIndex + 1)){
+// Get a reference to the query column.
+			LOCAL.ColumnName = LOCAL.Columns[ LOCAL.ColumnIndex ];
+// Store the query cell value into the struct by key.
+			LOCAL.Row[ LOCAL.ColumnName ] = ARGUMENTS.Data[ LOCAL.ColumnName ][ LOCAL.RowIndex ];
+		}
+// Add the structure to the query array.
+		ArrayAppend( LOCAL.QueryArray, LOCAL.Row );
+	 }
+// Return the array equivalent.
+	return( LOCAL.QueryArray );
+  }
+
+function DateConvertISO8601(ISO8601dateString, targetZoneOffset) {
+	var rawDatetime = left(ISO8601dateString,10) & " " & mid(ISO8601dateString,12,8);
+
+// adjust offset based on offset given in date string
+	if (uCase(mid(ISO8601dateString,20,1)) neq "Z")
+		targetZoneOffset = targetZoneOffset -  val(mid(ISO8601dateString,20,3)) ;
+
+	return DateAdd("h", targetZoneOffset, CreateODBCDateTime(rawDatetime));
+}
+
+public boolean function emptyOrBlank(string theString){
+	if (len(trim(theString)) > 0){
+	  return false	;
+	}
+	else{
+	  return true;
+	}
+}
+
+public string function sayHello(){
+  switch (application.Environment) {
+    case "dev":
+      msg = "Greetings, Welcome to the DEV server.";
+      break;
+    case "test":
+      msg = "Greetings, Welcome to the TEST server.";
+    default:
+      msg = "Greetings, Welcome to the PROD server.";
+  }
+  return msg;
+}
+}

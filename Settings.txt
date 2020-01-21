@@ -1,0 +1,72 @@
+<!---this page is used for users to check what keywords they cant use as well as for admins to add/delete keywords based on their preference.--->
+
+<cfscript>
+title = ": Settings";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="Yes" useCF_Scripts="true">
+<div id="content" role="document" class="col-xs-12" >
+
+
+<!---JS to grab hold of the OraclerServer user-object--->
+<script language="JavaScript">
+function showInput() {
+document.getElementById('display').innerHTML =
+document.getElementById("OracleServer").value;}
+</script>
+
+<!---dropdown list--->
+<p><h3>Switch servers</h3></p>
+<cfoutput>
+	Currently on the #UCase(session.OracleServer)# server.
+</cfoutput>
+<p>
+<cfform method="post" action="input.cfm">
+Switch server to:     <select name="OracleServer">
+<option value="dev">DEV</option>
+<option value="test">TEST</option>
+<option value="prod" selected="selected">PROD</option>
+</select>
+<button type="submit" class="btn btn-primary btn-sm">Submit</button>
+</cfform>
+</p>
+				
+<!---query that calls on the KeywordsList table--->
+<cfquery name="checklist" datasource="sqlprocessing">
+select *
+from KeywordsList
+</cfquery>
+	
+<!---query that calls on the admin table--->
+<p><cfquery name="userlist" datasource="sqlprocessing">
+select *
+from admin
+</cfquery></p>
+
+<cfform method="post" action="SettingsConnect.cfm">
+<!---grid that uses the KeywordsList table--->
+<div>
+<cfgrid name="keywordgrid" query="checklist" gridlines="true" sort="true" insert="true" delete="true"
+selectmode="edit" format="html">
+<cfgridcolumn name="keywords" width="400">
+</cfgrid>
+</div>
+
+<br>
+
+<!---grid that uses the admin table--->
+<div>
+<cfgrid name="admingrid" query="userlist" gridlines="true" sort="true" insert="true" delete="true"
+selectmode="edit" format="html" >
+<cfgridcolumn name="users" width="300">
+</cfgrid>
+</div>
+
+<br>
+
+<button type="submit" class="btn btn-primary btn-lg">Accept Changes</button>
+</cfform>
+				
+							
+</div>  
+</cf_DEPTemplate>

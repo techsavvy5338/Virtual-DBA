@@ -1,0 +1,191 @@
+
+component accessors=true output=false
+{
+	
+  siteMgr = CreateObject( "component", "siteManager" ) ;
+  siteMgr.loadSiteSettings(this);
+
+	function onApplicationStart(){
+	  application.udf = CreateObject("component","uf1");
+    application.siteMgr = CreateObject("component", "siteManager");
+
+// Set up the environment.
+	  switch(CGI.SERVER_NAME) {
+	    case "DevIntranet.dep.wv.gov":
+	    case "wwwdev.dep.wv.gov":
+  	    application.Environment="dev";
+	    break;
+
+	    case "TestIntranet.dep.wv.gov":
+	    case "wwwtest.dep.wv.gov":
+	    	application.Environment="test";
+	    break;
+	    
+	    default:
+	    	application.Environment="prod";
+	    }
+      
+      setAppDefaults();
+      setAppComponents();
+      siteMgr.setApplicationDefaults();
+      siteMgr.loadApplicationComponents();
+	}
+
+	function setAppDefaults(){
+	  application.Debug=getDebug();
+	}
+
+// Whether or not the pages should show debug information by default
+// if set to No, it can be overridden on particular pages by setting the
+// debug attribute on the DEP_Template when it is called.
+  public string function getDebug(){
+  switch (application.Environment) {
+      case "dev":
+      case "test":
+        dbg = "No";
+        break;
+      default:
+        dbg = "No";
+    }
+    return dbg;
+	}
+
+// Initial load of Coldfusion Components. For most components is good practice to load them to application  
+// variables then create a separate singleton function to use to get them on the various pages. This way
+// you only create them once on the Production server but on Development server where you are constantly
+// you are constantly changing them you can provide a new instance on each request. Depending on what you 
+// are trying to do, it might make sense to provide them for each session instead.
+
+	function setAppComponents(){
+		application.udf = new uf1();
+    application.DefaultAssets = new defaultAssets();
+	} 
+
+  public uf1 function getUdf()
+    {
+      if (application.environment == "prod"){
+      	if (!IsDefined("application.udf")) {
+      		application.udf = new uf1();
+      	}
+      	return application.udf;
+      }
+      else {
+      	return new uf1();
+      }
+    }
+
+  public defaultAssets function getDefaultAssets(){
+
+      if (application.environment == "prod"){
+        if (!IsDefined("application.assets")) {
+          application.defaultAssets = new defaultAssets();
+        }
+        return application.defaultAssets;
+      }
+      else {
+        return new defaultAssets();
+      }
+  }
+
+  public siteManager function getSiteMgr(){
+      if (application.environment == "prod"){
+        if (!IsDefined("application.siteMgr")) {
+          application.siteMgr = new siteMgr();
+        }
+        return application.siteMgr;
+      }
+      else {
+        return new siteMgr();
+      }
+  }
+
+  public User function getUser(){
+    if (!IsDefined("session.user")) {
+      session.user = new User();
+    }
+    return session.user;
+  } 
+
+// Checks to see if the application preview, and download directories exist.
+// Creates them if they do not. Note: You probably don't need this. It is to add 
+// functionality to allow for files to be saved to the file server and you need    
+// to create/copy the service files for it to be used.
+// See (devwebfiles(10.21.254.15)/webfiles/fileserv/MOD) for an example.
+
+	function setupDirectories(){
+	  httpService = new http();
+	  httpService.setUrl(application.BaseFileURL & "FileMgr.cfc?method=setupDirectories");
+	  httpService.setMethod("get");
+	  result = httpService.send();
+	  if(result.getprefix().statuscode contains "201")
+      {
+        application.dirSetupStatus="The directories have been set up.";
+      }
+      else
+      {
+        application.dirSetupStatus="There was a problem setting up the directories. Status code returned was " & result.getprefix().statuscode;
+      }
+	}
+
+// Begin a session by creating a new user and a new Article Manager.
+
+	function onSessionStart(){
+	  getUser();
+    session.getUser = this.getUser;
+    siteMgr.setSessionDefaults();
+    siteMgr.loadSessionComponents();	 
+	}
+
+// With each request, check to ensure that the user is logged in. If not,
+// send them to the login page.
+
+	function onRequestStart(string thePage){
+	   lock
+	     scope="session"
+	     type="exclusive"
+	     timeout="10"
+	    {
+// check to make sure a session user exists.
+
+	      if (application.AuthType NEQ 'none') {
+
+// If the user is going somewhere other than the login page
+// and they are not logged in, redirect them to the login page.
+
+              if (listLast(thePage,"/") != "login.cfm") {
+
+    	    	 if (!session.user.isLoggedIn()) {
+    	    	   session.targetPage = thePage;
+    	           location(application.root & "login.cfm","No");
+              	}
+        	  }
+      	  }
+      	}
+      request.udf = getUdf();
+      request.defaultAssets = getDefaultAssets();
+      request.loadPageLocalVars = this.loadPageLocalVars;
+      siteMgr.setRequestDefaults();
+      siteMgr.loadRequestComponents();
+	}
+
+// This function is intended to be run on every page to load a small set of variables 
+// from the application, session and request scopes into the page local variables scope
+// to make them easier to use.
+
+	public function loadPageLocalVars(pageVariables){
+
+// Application variables
+    pageVariables.env = application.Environment;
+		
+// Session variables
+    pageVariables.user = session.user;
+
+// Request variables
+		pageVariables.udf = request.udf;
+    pageVariables.defaultAssets = request.defaultAssets;
+
+// Set up some default page variables
+		pageVariables.alerts = arrayNew(1);
+		pageVariables.pageTitle = application.DefaultTitle & pageVariables.title;
+	}
+}

@@ -1,0 +1,95 @@
+<!---this page is all background and just checks to see if the user is trying to execute a query that matches a keyword--->
+
+
+
+<cfcomponent>
+
+
+
+<!---first part of this file checks what the user writes into the textarea from input.cfm against a list of keywords on settings.cfm and--->
+
+<!---if it matches any of the keywords than it basically gives an error saying not allowed, otherwise it lets you execute your code--->
+
+
+<!---query to call on KeywordsList table--->
+
+<cfquery name="checklist" datasource="sqlprocessing">
+
+select *
+from KeywordsList
+
+</cfquery>
+				
+
+<!---"valuelist" turns a query list into a delimiter string--->
+
+<cfset keylist="#valuelist(checklist.keywords)#">
+
+<cffunction name="keyword_checker">
+
+<!---setting up for a conditional statement where the initial value is false and the value that the user wrote into the textarea from input.cfm checks against the keywords one by one--->
+
+<cfset found = false >
+
+<cfloop list="#keylist#" index="key">
+<cfif findnocase(key,message)>
+
+<!---if the user entered a keyword then the initial value of false turns to true --->
+
+<cfset found = true >
+
+</cfif>
+
+</cfloop>
+
+<!---we ask for the new value of "found" whether it is still the initial of false or changed to true --->
+
+<cfreturn found >
+
+</cffunction>
+
+
+
+
+<!---this part of the files checks what user logged in with your (e/a) number username and then checks that username against the adminlist on settings.cfm--->
+
+<!---and if you are part of the adminlist then you have access to change the list of keywords also in settings.cfm, otherwise you have to contact your DBA. --->
+
+
+<!---query to call on admin table --->
+<cfquery name="userlist" datasource="sqlprocessing">
+
+select *
+from admin
+
+</cfquery>
+
+<!---"valuelist" turns a query list into a delimiter string--->
+
+<cfset adminlist="#valuelist(userlist.users)#">
+
+<cffunction name="admin_checker">
+
+<!---setting up for a conditional statement where the initial value is false and the value of the user is checked against the adminlist in settings.cfm--->
+
+<cfset found = false >
+<cfloop list="#adminlist#" index="adminkey">
+<cfif findnocase(adminkey,session.user.getusername())>
+
+<!---if the user matches the admin list then the intial value changes to true ---> 
+
+<cfset found = true >
+
+</cfif>
+
+</cfloop>
+
+<!---we ask for the new value of "found" whether it is still the initial of false or changed to true --->
+
+<cfreturn found >
+
+</cffunction>	
+
+	
+
+</cfcomponent>

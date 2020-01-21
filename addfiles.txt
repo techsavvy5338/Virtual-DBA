@@ -1,0 +1,12 @@
+<cfscript>
+  title = ": Page 3";
+  request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+
+		<div id="content" role="document" class="col-xs-12" >
+
+
+
+		</div>  
+</cf_DEPTemplate>

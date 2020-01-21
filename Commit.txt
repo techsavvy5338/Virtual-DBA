@@ -1,0 +1,58 @@
+<!---this page comes after the sqlresults and its job is to actually commit the code and while it commits the code it also writes the variables into the history table--->
+
+<cfscript>
+title = ":Commit";
+request.loadPageLocalVars(variables);
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">			
+				
+
+<!---selects specific line from SQLTable.txt to set as variable for history page--->
+<cffile action="read" file="#session.user.workDir#\SQLTable.txt" variable="SQLTable">
+<cfset HistoryDisplayValue=ListGetAt(SQLTable, 12, chr(10))>
+
+<!---puts SQLTable.txt into a list so i can select a certain line to put into the history table--->
+<cfset ArrayValue="#SQLTable#">
+<cfset ArrayList=listToArray (ArrayValue, chr(10))>
+<cfset ArrayLength=ArrayLen(#ArrayList#)>
+<cfset HistoryDisplayValue= ArrayList[#ArrayLength#-10]>
+
+<!---session variable for the cfquery below--->
+<cffile action="read" file="#session.user.workDir#\spool.htm" variable="session.spool_table">
+
+<!---query that does an insert into the history_grid on the history.cfm page--->
+<cfquery name="history_query" datasource="sqlprocessing">
+insert into history (Query_Date, Query_Username, Server, Query_Text, Truncated_Query_Results, Query_Results)
+values (<cfqueryparam  value="#Now()#" cfsqltype="CF_SQL_TIMESTAMP">, <cfqueryparam  value="#user.getusername()#" cfsqltype="CF_SQL_VARCHAR">, 
+<cfqueryparam  value="#session.OracleServer#" cfsqltype="CF_SQL_VARCHAR">, <cfqueryparam  value="#session.message#" cfsqltype="CF_SQL_CLOB">, 
+<cfqueryparam  value="#HistoryDisplayValue#" cfsqltype="CF_SQL_VARCHAR">, <cfqueryparam  value="#session.spool_table#" cfsqltype="CF_SQL_CLOB" >) 
+</cfquery>
+
+<!---sets variable sql_command equal to #markup# + #message# that will spool into a file when it gets executed--->
+<cffile action="read" file="#session.CurrentPath#\html.txt" variable="markup">
+<cfset newLine=chr(10)>
+<cfset enclose="#markup# spool #session.user.workDir#\spool.htm #newline# xxreplacexx#newLine# commit;#newLine# spool off#newline# exit">
+<cfset sql_command=replace(enclose, "xxreplacexx", session.message)>
+
+<!---writes the variable sql_command into CommitCode.txt so the cfexecute will perform--->
+<cffile action="write" file="#session.user.workDir#\CommitCode.txt" output="#sql_command#">
+				
+<!---executes the sql statement that was inputted and gets committed--->				
+<cfexecute name="sqlplus" arguments="sqlprocessing/winter17@ora#session.OracleServer# @#session.user.workDir#\CommitCode.txt"
+outputfile="#session.user.workDir#\SQLTable.txt">
+</cfexecute>
+
+<!---outputs your code and which server you are on--->
+<h3>SQL Results Have Been Committed</h3>
+<h3>SQL Command</h3>
+<cfoutput>
+<p>#session.message#</p>
+<p>Currently on the #UCase(session.OracleServer)# server.</p>
+</cfoutput>
+
+<cfoutput><iframe class="col-xs-12" frameBorder="0" src="work/#session.user.getusername()#/spool.htm"></iframe></cfoutput>
+
+
+</div>  
+</cf_DEPTemplate>

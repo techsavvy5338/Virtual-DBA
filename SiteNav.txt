@@ -1,0 +1,23 @@
+<nav class="nav site-nav container-fluid" role="navigation">
+  <cfoutput>
+        <div class="row nav-row">
+          <div class="col-xs-12 text-right">
+           
+
+            <a href="Input.cfm" class="btn btn-outline btn-lg">SQL Input</a>
+            <a href="Settings.cfm" class="btn btn-outline btn-lg">Settings</a>
+            <a href="History.cfm" class="btn btn-outline btn-lg">History</a>
+            <a href="Help.cfm" class="btn btn-outline btn-lg">Help</a>
+
+	<cfif !session.user.isLoggedIn()>
+			<a href="login.cfm" class="btn btn-outline btn-lg">Log In</a>
+	<cfelse>
+			<a href="logout.cfm" class="btn btn-outline btn-lg">Log Out</a>
+	</cfif>	
+          </div>
+        </div>
+  </cfoutput>
+</nav>
+
+
+

@@ -1,0 +1,45 @@
+<cfscript>
+	  title = ": Home";
+  request.loadPageLocalVars(variables);
+  myMsg = udf.sayHello();
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+		<div id="content" class="col-xs-12" >
+		<cfoutput>
+
+			<h1>#myMsg#</h1>
+			<h2>#user.getLastName()#, #user.getFirstName()#</h2>
+
+<!---JS to grab hold of the OraclerServer user-object--->			
+<script language="JavaScript">
+function showInput() {
+document.getElementById('display').innerHTML =
+document.getElementById("OracleServer").value;}
+</script>
+
+<p>Please choose a server and you can always switch servers by selecting the <a href="Settings.cfm">Settings</a> tab at the top right!</p>
+<p>If you are a first time user or having trouble please visit the <a href="Help.cfm">Help</a> tab at the top right!</p>
+
+<!---<p><cfoutput>#application.workDir#</cfoutput></p>
+<p><cfoutput>#session.user.workDir#</cfoutput></p>--->
+
+<!---dropdown list--->
+<p><h3>Switch servers</h3></p>
+<cfoutput>
+	Currently on the #UCase(session.OracleServer)# server.
+</cfoutput>
+<p>
+<cfform method="post" action="input.cfm">
+Switch server to:     <select name="OracleServer">
+<option value="dev">DEV</option>
+<option value="test">TEST</option>
+<option value="prod" selected="selected">PROD</option>
+</select>
+<button type="submit" class="btn btn-primary btn-sm">Submit</button>
+</cfform>
+</p>
+
+
+		</cfoutput>
+		</div>  
+</cf_DEPTemplate>

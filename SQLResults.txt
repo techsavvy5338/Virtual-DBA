@@ -1,0 +1,95 @@
+<!---this pages comes after the input page and visually shows output from what query you executed as well as gives you an option to commit or rollback the query.--->
+
+<cfscript>
+title = ": SQL Results";
+request.loadPageLocalVars(variables);
+LastFileInfo = -1000;
+if (fileExists("#session.user.workDir#\spool.htm")){
+  FileInfo=GetFileInfo("#session.user.workDir#\spool.htm").size;
+}
+</cfscript>
+<cf_DEPTemplate Title=#pageTitle# Debug="No">
+<div id="content" role="document" class="col-xs-12">
+
+<!---
+<!---attempts to remove any browser caching--->
+<cfheader name="cache-control"  value="no-cache, no-store, must-revalidate">
+<cfheader name="pragma" value="no-cache">
+<cfheader name="expires" value="#getHttpTimeString(now())#">
+--->
+<!---spools #message# #markup# plus rollback to spool.htm--->
+<cffile action="read" file="#session.CurrentPath#\html.txt" variable="markup">
+<cfset newLine = chr(10)>
+<cfset enclose = " #markup# spool #session.user.workDir#\spool.htm #newline# xxreplacexx#newLine# spool off#newline# rollback;#newLine# exit">
+<cfset sql_command = replace(enclose, "xxreplacexx", message)>
+
+<!---writes the cfset "enclose" into ExecuteCode.txt so the cfexecute will perform--->
+<cffile action="write" file="#session.user.workDir#\ExecuteCode.txt" output="#sql_command#">
+
+<cfparam default="xxx" name="message">
+<!---calls on the security.cfc object page--->
+<cfset qsec = new Security()> 
+<cfset keywordsfound = "#qsec.keyword_checker()#">
+<!---conditional statement where if textareafrom input.cfm does not equal the param "xxx" or the list of prohibited keywords then let it perform the query--->
+<cfif message neq "xxx" and not keywordsfound>
+	
+<!---executes query from spool.txt getting written into ExecuteCode.txt--->
+<cfexecute name="sqlplus" arguments="username/password@ora#session.OracleServer# @#session.user.workDir#\ExecuteCode.txt"
+outputfile="#session.user.workDir#\SQLTable.txt">
+</cfexecute>
+
+<cfscript>
+  done = false;
+	LastFileInfo = 0;
+</cfscript>
+<cfloop condition = "done eq false">
+<cfscript>
+sleep(2000);
+</cfscript>
+<cfscript>
+if (fileExists("#session.user.workDir#\spool.htm")){
+	FileInfo=GetFileInfo("#session.user.workDir#\spool.htm").size;
+}
+</cfscript>
+<cfif LastFileInfo eq FileInfo>
+<cfset done = true />
+<cfelse>
+<cfset LastFileInfo = #FileInfo#>
+</cfif>
+</cfloop>
+
+<!---reads spool.txt so i can output it--->
+<h3>SQL Results</h3>
+<cffile action="read" file="#session.user.workDir#\spool.htm" variable="session.spool_table" />
+<cfoutput><iframe class="col-xs-12" frameBorder="0" src="work/#session.user.getusername()#/spool.htm"></iframe></cfoutput>
+
+<!---outputs your code and which server you are on--->
+<h3>SQL Command</h3>
+<cfset session.message = #form.message# />
+<cfoutput>
+<p>#session.message#</p>
+<p>Currently on the #UCase(session.OracleServer)# server.</p>
+</cfoutput>
+
+<p> <cfform method="post" action="Commit.cfm"> <button type="submit" class="btn btn-primary btn-lg">Commit Results</button> </cfform> </p>
+<p> <cfform method="post" action="Rollback.cfm"> <button type="submit" class="btn btn-primary btn-lg">Rollback Results</button> </cfform> </p>
+
+<cfelse>
+
+<h1>The following command was not allowed.</h1>
+<p>Please see the list of prohibited keywords in the settings tab and then try rewording your code.</p>
+<p>If you can not submit the code yourself due to the restrictions then please contact your DBA.</p>
+<p> <cfform method="post" action="Input.cfm"><button type="submit" class="btn btn-primary btn-lg">Back</button></cfform> </p>
+
+</cfif>
+
+<!---query that does an insert into the Full_History--->
+<cfquery name="Full_History" datasource="sqlprocessing">
+insert into fullhistory (Query_Date, Query_Username, Server, Query_Text)
+values (<cfqueryparam  value="#Now()#" cfsqltype="CF_SQL_TIMESTAMP">, <cfqueryparam  value="#user.getusername()#" cfsqltype="CF_SQL_VARCHAR">, 
+<cfqueryparam  value="#session.OracleServer#" cfsqltype="CF_SQL_VARCHAR">, <cfqueryparam  value="#session.message#" cfsqltype="CF_SQL_CLOB">) 
+</cfquery>
+
+
+</div>
+</cf_DEPTemplate>
